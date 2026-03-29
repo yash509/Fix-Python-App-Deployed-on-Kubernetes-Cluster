@@ -1,0 +1,164 @@
+Ques:-
+
+One of the DevOps engineers was trying to deploy a python app on Kubernetes cluster. Unfortunately, due to some mis-configuration, the application is not coming up. Please take a look into it and fix the issues. Application should be accessible on the specified nodePort.
+
+1. The deployment name is python-deployment-devops, its using poroko/flask-demo-app image. The deployment and service of this app is already deployed.
+
+2. nodePort should be 32345 and targetPort should be python flask app's default port.
+
+
+
+Soln:-
+
+Step 1: Check for the existing deloyment file
+
+kubectl get deploy
+
+
+
+Step 2: Clone the deployment file on the root
+
+kubectl get deploy python-deployment-devops -o yaml > python-deployment-devops.yaml
+
+
+
+Step 3: Resolve the errors in the cloned deployment file
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"python-deployment-devops","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"python_app"}},"template":{"metadata":{"labels":{"app":"python_app"}},"spec":{"containers":[{"image":"poroko/flask-app-demo","name":"python-container-devops","ports":[{"containerPort":5000}]}]}}}}
+  creationTimestamp: "2026-03-29T05:46:35Z"
+  generation: 1
+  name: python-deployment-devops
+  namespace: default
+  resourceVersion: "2162"
+  uid: 1af4cee8-4762-44a0-8e8a-137db19dcd9a
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: python_app
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: python_app
+    spec:
+      containers:
+      - image: poroko/flask-demo-app
+        imagePullPolicy: Always
+        name: python-container-devops
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  conditions:
+  - lastTransitionTime: "2026-03-29T05:46:35Z"
+    lastUpdateTime: "2026-03-29T05:46:35Z"
+    message: Deployment does not have minimum availability.
+    reason: MinimumReplicasUnavailable
+    status: "False"
+    type: Available
+  - lastTransitionTime: "2026-03-29T05:46:35Z"
+    lastUpdateTime: "2026-03-29T05:46:35Z"
+    message: ReplicaSet "python-deployment-devops-7dd8f6ddf8" is progressing.
+    reason: ReplicaSetUpdated
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  replicas: 1
+  unavailableReplicas: 1
+  updatedReplicas: 1
+  
+  
+
+Step 4: Apply the cloned deployment file
+
+kubectl apply -f python-deployment-devops.yaml
+
+
+
+Step 5: Check for the deployment and Pod if they are Ready and Running or not
+
+kubectl get deploy
+kubectl get pods
+
+
+
+Step 6: Check for the existing service file
+
+kubectl get svc
+
+
+
+Step 7: Clone the service file on the root
+
+kubectl get svc python-service-devops -o yaml > python-service-devops.yaml
+
+
+
+Step 8: Resolve the errors in the cloned service file
+
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"python-service-devops","namespace":"default"},"spec":{"ports":[{"nodePort":32345,"port":8080}],"selector":{"app":"python_app"},"type":"NodePort"}}
+  creationTimestamp: "2026-03-29T05:46:35Z"
+  name: python-service-devops
+  namespace: default
+  resourceVersion: "2150"
+  uid: eba73847-ca20-4b95-9295-de86ce21c55d
+spec:
+  clusterIP: 10.43.232.221
+  clusterIPs:
+  - 10.43.232.221
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - nodePort: 32345
+    port: 8080
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    app: python_app
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}
+  
+  
+  
+Step 9: Apply the cloned service file
+
+kubectl apply -f python-service-devops.yaml  
+
+
+
+Step 10: Check for the deployment, service and Pod if they are Ready and Running or not
+
+kubectl get deploy
+kubectl get pods
+kubectl get svc
